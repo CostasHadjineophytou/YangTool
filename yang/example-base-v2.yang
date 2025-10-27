@@ -1,0 +1,39 @@
+module example-base {
+  yang-version 1.1;
+  namespace "urn:example:base";
+  prefix exb;
+
+  organization "Example Org";
+  description
+    "Sample YANG module for Mini YANG Inspector demo (v2).";
+
+  revision 2025-10-21 {
+    description "Update: add telemetry, change MTU type, move enabled";
+  }
+
+  container system {
+    description "Top-level system configuration (updated)";
+
+    leaf hostname {
+      type string;
+      description "Device hostname";
+    }
+
+    container interfaces {
+      description "Interface-related settings";
+
+      leaf mtu {
+        type uint32; // type changed from uint16 in v1
+        description "Default interface MTU";
+      }
+    }
+
+    container telemetry { // new container in v2
+      leaf enabled {
+        type boolean; // moved from system/enabled to system/telemetry/enabled
+      }
+    }
+  }
+}
+
+

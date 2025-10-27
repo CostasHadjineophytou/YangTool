@@ -1,0 +1,38 @@
+module example-base {
+  yang-version 1.1;
+  namespace "urn:example:base";
+  prefix exb;
+
+  organization "Example Org";
+  description
+    "Sample YANG module for Mini YANG Inspector demo (v1).";
+
+  revision 2025-10-20 {
+    description "Initial revision";
+  }
+
+  container system {
+    description "Top-level system configuration";
+
+    leaf hostname {
+      type string;
+      description "Device hostname";
+    }
+
+    leaf enabled {
+      type boolean;
+      description "Whether the system is enabled";
+    }
+
+    container interfaces {
+      description "Interface-related settings";
+
+      leaf mtu {
+        type uint16;
+        description "Default interface MTU";
+      }
+    }
+  }
+}
+
+
