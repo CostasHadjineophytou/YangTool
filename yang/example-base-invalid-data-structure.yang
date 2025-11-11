@@ -1,0 +1,67 @@
+// Intentionally invalid: a top-level container is not allowed.
+// YANG requires the top-level statement to be 'module' or 'submodule'.
+// Because a valid module follows below, pyang commonly reports TRAILING_GARBAGE
+// (it may also report UNEXPECTED_KEYWORD_N depending on parse recovery).
+container system {
+  description "Top-level system configuration (invalid outside module)";
+
+  leaf hostname {
+    type string;
+    description "Device hostname";
+  }
+
+  leaf enabled {
+    type boolean;
+    description "Whether the system is enabled";
+  }
+
+  container interfaces {
+    description "Interface-related settings";
+
+    leaf mtu {
+      type uint16;
+      description "Default interface MTU";
+    }
+  }
+}
+
+// A proper module follows; with the stray top-level container above,
+// pyang typically reports a structural error such as TRAILING_GARBAGE.
+module example-base-structure-not-valid {
+  yang-version 1.1;
+  namespace "urn:example:base:structure-not-valid";
+  prefix exb;
+
+  organization "Example Org";
+  description
+    "Module similar to example-base, preceded by an invalid top-level container.";
+
+  revision 2025-10-20 {
+    description "Initial revision";
+  }
+
+  container system {
+    description "Top-level system configuration";
+
+    leaf hostname {
+      type string;
+      description "Device hostname";
+    }
+
+    leaf enabled {
+      type boolean;
+      description "Whether the system is enabled";
+    }
+
+    container interfaces {
+      description "Interface-related settings";
+
+      leaf mtu {
+        type uint16;
+        description "Default interface MTU";
+      }
+    }
+  }
+}
+
+

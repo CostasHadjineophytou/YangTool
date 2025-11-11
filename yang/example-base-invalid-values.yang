@@ -1,0 +1,45 @@
+module example-base-not-valid {
+  yang-version 1.2;
+  namespace "urn:example:base:not-valid";
+  prefix exb;
+
+  import imaginary-module {
+    prefix img;
+  }
+
+  organization "Example Org";
+  description
+    "Intentionally invalid YANG module to trigger validation failure.";
+
+  revision 2025-10-20 {
+    description "Invalid revision for demo";
+  }
+
+  container system {
+    description "Top-level system configuration";
+
+    leaf hostname {
+      type string;
+      description "Device hostname";
+    }
+
+    leaf enabled {
+      type boolean;
+      description "Whether the system is enabled";
+    }
+
+    container interfaces {
+      description "Interface-related settings";
+
+      // Intentionally invalid base type (should be uint16)
+      leaf mtu {
+        type uint17;
+        description "Default interface MTU (invalid type to trigger error)";
+      }
+    }
+  }
+}
+
+
+
+
