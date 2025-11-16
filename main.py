@@ -8,6 +8,7 @@ except Exception:
     print("pyang not installed. Run: pip install pyang", file=sys.stderr)
     sys.exit(2)
 
+# Functions to load and validate the YANG module
 def build_repository(search_dirs):
     """Helper function to build the repository"""
     search_path = os.pathsep.join([d for d in search_dirs if d]) if search_dirs else None
@@ -22,7 +23,50 @@ def add_module_to_context(ctx, yang_path):
     # Use pyang's built in add_module to add the module to the context
     ctx.add_module(filename, text)
 
+# Functions to extract the summary of the YANG module
+def get_main_module_stmt(ctx, source_filename):
+    basename = os.path.basename(source_filename)
+    for m in ctx.modules.values():
+        pos_ref = getattr(getattr(m, "pos", None), "ref", None)
+        if pos_ref and os.path.basename(pos_ref) == basename:
+            return m
+    return next(iter(ctx.modules.values())) if ctx.modules else None
 
+def find_first_substmt_arg(stmt, keyword):
+    for s in getattr(stmt, "substmts", []) or []:
+        if s.keyword == keyword:
+            return s.arg
+    return "-"
+
+def walk_model(stmt, parent_path=""):
+    """Traverse the module statement to collect containers and leaves with paths and types"""
+    containers = []
+    leaves = []
+
+    def _walk(s, path_prefix):
+        if s.keyword == "container":
+            current_path = f"{path_prefix}/{s.arg}" if path_prefix else s.arg
+            containers.append(current_path)
+            for child in getattr(s, "substmts", []) or []:
+                _walk(child, current_path)
+            return
+
+        if s.keyword == "leaf":
+            current_path = f"{path_prefix}/{s.arg}" if path_prefix else s.arg
+            leaf_type = find_first_substmt_arg(s, "type") or "-"
+            leaves.append((current_path, leaf_type))
+            return
+
+        # Dive into other structuring statements to find nested nodes
+        for child in getattr(s, "substmts", []) or []:
+            _walk(child, path_prefix)
+
+    for sub in getattr(stmt, "substmts", []) or []:
+        _walk(sub, parent_path)
+
+    return containers, leaves
+
+# Main function to validate and summarize the YANG module
 def validate_and_summarize(yang_file, include_paths):
     """Function to validate and summarize the YANG module"""
     # Only validates for now, no summary yet!
@@ -44,8 +88,27 @@ def validate_and_summarize(yang_file, include_paths):
             print(f"- {where}: {etype}: {msg}")
         return 1
 
-    # Case: Validation passed
-    print("YANG validation passed.")
+    # Case: Validation passed, state success, print the summary of the YANG module.
+    print("YANG validation passed.\nSee module summary below:\n")
+    module_stmt = get_main_module_stmt(ctx, yang_file)
+    if module_stmt:
+        module_name = getattr(module_stmt, "arg", "-")
+        namespace = find_first_substmt_arg(module_stmt, "namespace")
+        print(f"Module: {module_name}")
+        print(f"Namespace: {namespace}")
+        containers, leaves = walk_model(module_stmt)
+        print("Containers:")
+        if containers:
+            for c in sorted(containers):
+                print(f"- {c}")
+        else:
+            print("- (none)")
+        print("Leaves:")
+        if leaves:
+            for path, ltype in sorted(leaves, key=lambda x: x[0]):
+                print(f"- {path}: {ltype}")
+        else:
+            print("- (none)")
     return 0
 
 
