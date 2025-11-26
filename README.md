@@ -29,6 +29,17 @@ Run:
 """
 
 """
+yang_dependency.py - a tool that produces a yang module dependency tree.
+
+Function:
+1) load and validate a .yang from the web with pyang
+2) Produce a dependency tree showing which modules are imports and transitive imports.
+
+Run:
+  py .\yang_dependency.py https://github.com/YangModels/yang/blob/main/vendor/cisco/xr/2531/Cisco-IOS-XR-um-config-validation-cfg.yang
+"""
+
+"""
 yang_online.py - a tool that validates and summarises directly from raw github yang modules and produces a yang module dependency tree.
 
 Note this is a good way to find dependencies if wanting to use local files.
