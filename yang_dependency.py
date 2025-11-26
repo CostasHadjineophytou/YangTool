@@ -14,20 +14,24 @@ except Exception:
 
 
 def http_get_text(url):
+    """Fetch a URL and return its text content, raising on HTTP errors."""
     resp = requests.get(url, timeout=30)
     resp.raise_for_status()
     return resp.text
 
 
 def add_module_text(ctx, filename, text):
+    """Register a YANG module's source text in the given pyang Context."""
     ctx.add_module(filename, text)
 
 
 def infer_filename_from_url(url):
+    """Infer a filename from the URL path (e.g., '.../file.yang' -> 'file.yang')."""
     return os.path.basename(urlparse(url).path) or "module.yang"
 
 
 def extract_imports(yang_text):
+    """Extract module names from 'import' and 'include' statements (naive line-based scan)."""
     imports = []
     includes = []
     for line in yang_text.splitlines():
@@ -50,6 +54,7 @@ def extract_imports(yang_text):
 
 
 def try_fetch_dependency(name, base_urls):
+    """Try to fetch a dependency '<name>.yang' from each base URL; return (filename, text) or None."""
     for base in base_urls:
         candidate = urljoin(base if base.endswith("/") else base + "/", f"{name}.yang")
         try:
@@ -63,9 +68,17 @@ def try_fetch_dependency(name, base_urls):
 def resolve_dependencies(ctx, roots, import_bases, visited=None):
     """
     Recursively fetch and add imported/included modules into the context.
+
+    Args:
+        ctx: pyang Context to add modules to.
+        roots: top-level import/include names to resolve.
+        import_bases: base URLs to try when fetching '<name>.yang'.
+        visited: set used to avoid cycles.
+
     Returns:
-      - found_paths: list like ['A', 'A/B', ...] for fetched modules
-      - missing: list of module path names that could not be fetched
+        (found_paths, missing) where:
+          - found_paths is a list like ['A', 'A/B', ...] showing transitive paths
+          - missing lists dependency paths that could not be fetched
     """
     if visited is None:
         visited = set()
@@ -95,6 +108,7 @@ def resolve_dependencies(ctx, roots, import_bases, visited=None):
 
 
 def validate_and_print_transitive_dependencies(module_url, import_bases, ignore_missing):
+    """Validate a remote YANG module and print its transitive dependency tree and pass/fail status."""
     if is_github_ui_url(module_url):
         module_url = to_raw_github_url(module_url)
 
@@ -153,6 +167,7 @@ def validate_and_print_transitive_dependencies(module_url, import_bases, ignore_
 
 
 def parse_args(argv):
+    """Parse CLI arguments for validating a remote YANG module and printing dependencies."""
     p = argparse.ArgumentParser(description="Validate a remote YANG module and print its transitive dependency tree")
     p.add_argument("url", help="HTTP(S) URL to the YANG module (GitHub Raw or standard URL)")
     p.add_argument(
@@ -171,6 +186,7 @@ def parse_args(argv):
 
 
 def main(argv):
+    """CLI entrypoint: parse args and run validation+dependency printing."""
     args = parse_args(argv)
     return validate_and_print_transitive_dependencies(args.url, args.import_base, args.ignore_missing_imports)
 

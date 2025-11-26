@@ -69,8 +69,7 @@ def walk_model(stmt, parent_path=""):
 # Main function to validate and summarize the YANG module
 def validate_and_summarize(yang_file, include_paths):
     """Function to validate and summarize the YANG module"""
-    # Only validates for now, no summary yet!
-
+    
     include_dirs = [os.path.dirname(os.path.abspath(yang_file))] + (include_paths or [])
 
     # Using pyang's repository and context to validate the YANG module via helper functions defined above
