@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 from urllib.parse import urljoin, urlparse
+from utilities.web_address_converter import is_github_ui_url, to_raw_github_url
 
 import requests
 
@@ -10,25 +11,6 @@ try:
 except Exception:
     print("pyang not installed. Run: pip install pyang", file=sys.stderr)
     sys.exit(2)
-
-
-def is_github_ui_url(url: str) -> bool:
-    return "github.com" in urlparse(url).netloc and "/blob/" in url
-
-def to_raw_github_url(url: str) -> str:
-    # Convert https://github.com/{org}/{repo}/blob/{branch}/path/file.yang
-    #   -> https://raw.githubusercontent.com/{org}/{repo}/{branch}/path/file.yang
-    parts = urlparse(url)
-    path_parts = parts.path.split("/blob/")
-    if len(path_parts) != 2:
-        return url
-    left, right = path_parts
-    segs = left.strip("/").split("/")  # org, repo
-    if len(segs) < 2:
-        return url
-    org, repo = segs[:2]
-    branch_and_path = right.lstrip("/")
-    return f"https://raw.githubusercontent.com/{org}/{repo}/{branch_and_path}"
 
 
 def http_get_text(url: str) -> str:
