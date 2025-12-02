@@ -3,6 +3,7 @@ import os
 import sys
 from urllib.parse import urljoin, urlparse
 from utilities.web_address_converter import is_github_ui_url, to_raw_github_url
+from utilities.pyang_utils import add_module_text
 
 import requests
 
@@ -18,11 +19,6 @@ def http_get_text(url):
     resp = requests.get(url, timeout=30)
     resp.raise_for_status()
     return resp.text
-
-
-def add_module_text(ctx, filename, text):
-    """Register a YANG module's source text in the given pyang Context."""
-    ctx.add_module(filename, text)
 
 
 def infer_filename_from_url(url):

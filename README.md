@@ -42,8 +42,6 @@ Run:
 """
 yang_online.py - a tool that validates and summarises directly from raw github yang modules and produces a yang module dependency tree.
 
-Note this is a good way to find dependencies if wanting to use local files.
-
 Function:
 1) load and validate a .yang from the web with pyang
 2) extract a small summary (module, namespace, containers, leaves+types)
