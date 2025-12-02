@@ -3,6 +3,7 @@ import os
 import sys
 from urllib.parse import urljoin, urlparse
 from utilities.web_address_converter import is_github_ui_url, to_raw_github_url
+from utilities.yang_model_utils import get_main_module_stmt, find_first_substmt_arg
 
 import requests
 
@@ -104,21 +105,6 @@ def resolve_dependencies(
         _walk(root, root)
     return list(found_paths), missing
 
-
-def get_main_module_stmt(ctx: pyang_context.Context, source_filename: str):
-    basename = os.path.basename(source_filename)
-    for m in ctx.modules.values():
-        pos_ref = getattr(getattr(m, "pos", None), "ref", None)
-        if pos_ref and os.path.basename(pos_ref) == basename:
-            return m
-    return next(iter(ctx.modules.values())) if ctx.modules else None
-
-
-def find_first_substmt_arg(stmt, keyword: str) -> str:
-    for s in getattr(stmt, "substmts", []) or []:
-        if s.keyword == keyword:
-            return s.arg
-    return "-"
 
 
 def walk_model(stmt, parent_path: str = ""):

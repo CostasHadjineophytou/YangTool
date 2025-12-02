@@ -7,37 +7,11 @@ try:
 except Exception:
     print("pyang not installed. Run: pip install pyang", file=sys.stderr)
     sys.exit(2)
+from utilities.pyang_utils import build_repository, add_module_to_context
+from utilities.yang_model_utils import get_main_module_stmt, find_first_substmt_arg
 
-# Functions to load and validate the YANG module
-def build_repository(search_dirs):
-    """Helper function to build the repository"""
-    search_path = os.pathsep.join([d for d in search_dirs if d]) if search_dirs else None
-    # Use pyang's built in FileRepository to build the repository
-    return repository.FileRepository(search_path)
 
-def add_module_to_context(ctx, yang_path):
-    """Read a YANG file and register it with the given pyang context"""
-    filename = os.path.basename(yang_path)
-    with open(yang_path, "r", encoding="utf-8") as f:
-        text = f.read()
-    # Use pyang's built in add_module to add the module to the context
-    ctx.add_module(filename, text)
-
-# Functions to extract the summary of the YANG module
-def get_main_module_stmt(ctx, source_filename):
-    basename = os.path.basename(source_filename)
-    for m in ctx.modules.values():
-        pos_ref = getattr(getattr(m, "pos", None), "ref", None)
-        if pos_ref and os.path.basename(pos_ref) == basename:
-            return m
-    return next(iter(ctx.modules.values())) if ctx.modules else None
-
-def find_first_substmt_arg(stmt, keyword):
-    for s in getattr(stmt, "substmts", []) or []:
-        if s.keyword == keyword:
-            return s.arg
-    return "-"
-
+# Summary helpers: walk the model tree to collect containers and leaves
 def walk_model(stmt, parent_path=""):
     """Traverse the module statement to collect containers and leaves with paths and types"""
     containers = []
@@ -88,7 +62,7 @@ def validate_and_summarize(yang_file, include_paths):
         return 1
 
     # Case: Validation passed, state success, print the summary of the YANG module.
-    print("YANG validation passed.\nSee module summary below:\n")
+    print("\nYANG validation passed.\n\nSee module summary below:\n")
     module_stmt = get_main_module_stmt(ctx, yang_file)
     if module_stmt:
         module_name = getattr(module_stmt, "arg", "-")
@@ -108,6 +82,7 @@ def validate_and_summarize(yang_file, include_paths):
                 print(f"- {path}: {ltype}")
         else:
             print("- (none)")
+        print("\n")
     return 0
 
 

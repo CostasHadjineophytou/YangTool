@@ -7,33 +7,8 @@ try:
 except Exception:
     print("pyang not installed. Run: pip install pyang", file=sys.stderr)
     sys.exit(2)
-
-def build_repo(paths):
-    """Create a pyang FileRepository from a list of search directories."""
-    search_path = os.pathsep.join([d for d in paths if d]) if paths else None
-    return repository.FileRepository(search_path)
-
-def add_to_ctx(ctx, yang_path):
-    """Read a YANG file and add its contents to the given pyang Context."""
-    name = os.path.basename(yang_path)
-    with open(yang_path, "r", encoding="utf-8") as f:
-        ctx.add_module(name, f.read())
-
-def get_module(ctx, src):
-    """Select the module whose source filename matches 'src'; fallback to the first in context."""
-    base = os.path.basename(src)
-    for m in ctx.modules.values():
-        pos_ref = getattr(getattr(m, "pos", None), "ref", None)
-        if pos_ref and os.path.basename(pos_ref) == base:
-            return m
-    return next(iter(ctx.modules.values())) if ctx.modules else None
-
-def first_sub_arg(stmt, keyword):
-    """Return the first substatement argument for 'keyword', or '-' if not present."""
-    for s in getattr(stmt, "substmts", []) or []:
-        if s.keyword == keyword:
-            return s.arg
-    return "-"
+from utilities.pyang_utils import build_repository, add_module_to_context
+from utilities.yang_model_utils import get_main_module_stmt, find_first_substmt_arg
 
 def collect(stmt):
     """Walk the module statement and collect containers (set of paths) and leaves (path->type)."""
@@ -50,7 +25,7 @@ def collect(stmt):
 
         if s.keyword == "leaf":
             path = f"{prefix}/{s.arg}" if prefix else s.arg
-            leaves[path] = first_sub_arg(s, "type") or "-"
+            leaves[path] = find_first_substmt_arg(s, "type") or "-"
             return
 
         if hasattr(s, "substmts") and getattr(s, "substmts"):
@@ -64,16 +39,16 @@ def collect(stmt):
 
 def validate_and_collect(yang_file, include_paths):
     """Validate a YANG file, select its main module, and return collected containers/leaves."""
-    repo = build_repo([os.path.dirname(os.path.abspath(yang_file))] + include_paths)
+    repo = build_repository([os.path.dirname(os.path.abspath(yang_file))] + include_paths)
     ctx = pyang_context.Context(repo)
-    add_to_ctx(ctx, yang_file)
+    add_module_to_context(ctx, yang_file)
     ctx.validate()
 
     if getattr(ctx, "errors", None):
         msgs = "; ".join(f"{getattr(p, 'ref', '<input>')}: {t}: {m}" for p, t, m in ctx.errors)
         raise ValueError(f"Validation failed for {yang_file}: {msgs}")
 
-    mod = get_module(ctx, yang_file)
+    mod = get_main_module_stmt(ctx, yang_file)
     if not mod:
         raise ValueError(f"No module found in {yang_file}")
 
@@ -116,7 +91,7 @@ def main(argv):
     c_removed, c_added = compare_sets(old_cont, new_cont)
     l_removed, l_added, l_changed = compare_dicts(old_leaves, new_leaves)
 
-    print("Containers:")
+    print("\nContainers:")
     print("- Added:")
     for i in sorted(c_added) or ["(none)"]:
         print(f"  - {i}")
@@ -124,7 +99,7 @@ def main(argv):
     for i in sorted(c_removed) or ["(none)"]:
         print(f"  - {i}")
 
-    print("Leaves:")
+    print("\nLeaves:")
     print("- Added:")
     for i in sorted(l_added) or ["(none)"]:
         print(f"  - {i}: {new_leaves.get(i, '-')}")
@@ -137,7 +112,7 @@ def main(argv):
             print("  - (none)")
         else:
             print(f"  - {i}: {old_leaves[i]} -> {new_leaves[i]}")
-
+    print("\n")
     return 0
 
 

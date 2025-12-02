@@ -148,7 +148,7 @@ def validate_and_print_transitive_dependencies(module_url, import_bases, ignore_
             filtered.append((pos, etype, msg))
         errors = filtered
 
-    print("Dependencies (fetched):")
+    print("\nDependencies:\n")
     if found_paths:
         for p in sorted(found_paths):
             print(f"- {p}")
@@ -160,9 +160,9 @@ def validate_and_print_transitive_dependencies(module_url, import_bases, ignore_
             print(f"- {p}")
 
     if errors:
-        print("YANG validation failed.")
+        print("\nYANG validation failed.\n")
         return 1
-    print("YANG validation passed.")
+    print("\nYANG validation passed.\n")
     return 0
 
 
